@@ -10,6 +10,7 @@ pipeline {
       steps {
         script {
         sh '''
+          docker rm -f jenkins
           docker build -t $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG .
           sleep 6
         '''
@@ -63,6 +64,8 @@ pipeline {
             cat values.yml
             sed -i "s+tag.*+tag: ${DOCKER_TAG}+g" values.yml
             helm upgrade --install app fastapi --values=values.yml --namespace dev
+            PORT=(kubectl get --namespace dev -o jsonpath="{.spec.ports[0].nodePort}" services app-fastapi)
+            echo "Dev env available at http://0.0.0.0:$PORT"
           '''
         }
       }
@@ -82,6 +85,8 @@ pipeline {
             cat values.yml
             sed -i "s+tag.*+tag: ${DOCKER_TAG}+g" values.yml
             helm upgrade --install app fastapi --values=values.yml --namespace staging
+            PORT=(kubectl get --namespace staging -o jsonpath="{.spec.ports[0].nodePort}" services app-fastapi)
+            echo "Staging env available at http://0.0.0.0:$PORT"
           '''
         }
       }
@@ -106,6 +111,8 @@ pipeline {
             cat values.yml
             sed -i "s+tag.*+tag: ${DOCKER_TAG}+g" values.yml
             helm upgrade --install app fastapi --values=values.yml --namespace prod
+            PORT=(kubectl get --namespace prod -o jsonpath="{.spec.ports[0].nodePort}" services app-fastapi)
+            echo "Prod env available at http://0.0.0.0:$PORT"
           '''
         }
       }
